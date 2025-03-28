@@ -8,16 +8,40 @@ const Signup = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
   const { signup } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setIsSubmitting(true);
 
     // Basic validation
+    if (!name || !email || !password) {
+      setError('Please fill in all fields');
+      setIsSubmitting(false);
+      return;
+    }
+
     if (password !== confirmPassword) {
       setError('Passwords do not match');
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError('Please enter a valid email address');
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Validate password strength
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters long');
+      setIsSubmitting(false);
       return;
     }
 
@@ -26,6 +50,8 @@ const Signup = () => {
       navigate('/'); // Redirect to home on successful signup
     } catch (err) {
       setError(err.message || 'Signup failed');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -39,7 +65,10 @@ const Signup = () => {
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+            <div 
+              className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" 
+              role="alert"
+            >
               {error}
             </div>
           )}
@@ -101,9 +130,14 @@ const Signup = () => {
           <div>
             <button
               type="submit"
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              disabled={isSubmitting}
+              className={`group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white ${
+                isSubmitting 
+                  ? 'bg-gray-500 cursor-not-allowed' 
+                  : 'bg-indigo-600 hover:bg-indigo-700'
+              } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
             >
-              Sign up
+              {isSubmitting ? 'Signing up...' : 'Sign up'}
             </button>
           </div>
 
