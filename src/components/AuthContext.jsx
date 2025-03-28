@@ -3,6 +3,16 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 // Create Authentication Context
 const AuthContext = createContext(null);
 
+// Mock users database (in a real app, this would be on the backend)
+const mockUsers = [
+  {
+    id: '1',
+    email: 'test@example.com',
+    password: 'password123',
+    name: 'Test User'
+  }
+];
+
 // Authentication Provider Component
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -10,92 +20,83 @@ export const AuthProvider = ({ children }) => {
 
   // Check authentication on initial load
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      // Validate token and set user
-      validateToken(token);
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
     }
     setIsLoading(false);
   }, []);
 
   // Login function
   const login = async (email, password) => {
-    try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
+    // Simulate API call
+    return new Promise((resolve, reject) => {
+      // Simulate network delay
+      setTimeout(() => {
+        const foundUser = mockUsers.find(
+          u => u.email === email && u.password === password
+        );
 
-      if (!response.ok) {
-        throw new Error('Login failed');
-      }
-
-      const data = await response.json();
-      localStorage.setItem('token', data.token);
-      setUser(data.user);
-      return data.user;
-    } catch (error) {
-      console.error('Login error:', error);
-      throw error;
-    }
+        if (foundUser) {
+          // Create a token (in real app, this would be JWT)
+          const token = btoa(JSON.stringify(foundUser));
+          
+          // Store user and token
+          localStorage.setItem('user', JSON.stringify(foundUser));
+          localStorage.setItem('token', token);
+          
+          setUser(foundUser);
+          resolve(foundUser);
+        } else {
+          reject(new Error('Invalid email or password'));
+        }
+      }, 500);
+    });
   };
 
   // Signup function
   const signup = async (email, password, name) => {
-    try {
-      const response = await fetch('/api/auth/signup', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password, name }),
-      });
+    // Simulate API call
+    return new Promise((resolve, reject) => {
+      // Simulate network delay
+      setTimeout(() => {
+        // Check if user already exists
+        const existingUser = mockUsers.find(u => u.email === email);
+        
+        if (existingUser) {
+          reject(new Error('User with this email already exists'));
+          return;
+        }
 
-      if (!response.ok) {
-        throw new Error('Signup failed');
-      }
+        // Create new user
+        const newUser = {
+          id: String(mockUsers.length + 1),
+          email,
+          password,
+          name
+        };
 
-      const data = await response.json();
-      localStorage.setItem('token', data.token);
-      setUser(data.user);
-      return data.user;
-    } catch (error) {
-      console.error('Signup error:', error);
-      throw error;
-    }
+        // In a real app, you would save this to a database
+        mockUsers.push(newUser);
+
+        // Create a token (in real app, this would be JWT)
+        const token = btoa(JSON.stringify(newUser));
+        
+        // Store user and token
+        localStorage.setItem('user', JSON.stringify(newUser));
+        localStorage.setItem('token', token);
+        
+        setUser(newUser);
+        resolve(newUser);
+      }, 500);
+    });
   };
 
   // Logout function
   const logout = () => {
+    localStorage.removeItem('user');
     localStorage.removeItem('token');
     setUser(null);
-  };
-
-  // Token validation function
-  const validateToken = async (token) => {
-    try {
-      const response = await fetch('/api/auth/validate', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setUser(data.user);
-      } else {
-        // Invalid token, logout
-        logout();
-      }
-    } catch (error) {
-      console.error('Token validation error:', error);
-      logout();
-    }
   };
 
   // Get authentication token
